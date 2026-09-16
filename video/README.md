@@ -1,6 +1,6 @@
-# 录像提交说明
+# 运行演示
 
-将一次真实、未剪辑或清晰剪辑的运行录像保存为 `crashhunter-demo.mp4`（或 `.webm`）放在本目录。为避免 Git 仓库过大，视频文件默认被 `.gitignore` 忽略；可上传到 GitHub Release、Bilibili 或网盘，并在本文件末尾补上公开链接。
+演示视频文件命名为 `crashhunter-demo.mp4`（或 `.webm`），保存在本目录。为避免 Git 仓库过大，视频文件默认被 `.gitignore` 忽略；可上传到 GitHub Release、Bilibili 或网盘，并在本文件末尾补上公开链接。
 
 ## 推荐录制内容（60-90 秒）
 

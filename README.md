@@ -13,8 +13,7 @@ CrashHunter 是一个面向课程小项目的轻量级动态软件测试平台�
 │   ├── src/crash_hunter/
 │   ├── tests/
 │   └── demo_target/
-├── video/                 # 运行录像和录制说明
-└── prompt/                # 可按课程要求补充与大模型的对话记录（本版本暂不创建）
+└── video/                 # 运行演示材料
 ```
 
 ## 环境
@@ -97,9 +96,9 @@ python -m code.src.crash_hunter --target D:\\path\\to\\program `
 python -m unittest discover -s code/tests -v
 ```
 
-## 录像
+## 演示视频
 
-请参考 [video/README.md](video/README.md) 录制并放入实际演示视频；其中给出了可复用的录屏脚本和验收清单。
+运行演示的说明和材料位于 [video/README.md](video/README.md)。
 
 ## GitHub 发布
 
@@ -107,8 +106,6 @@ python -m unittest discover -s code/tests -v
 git add README.md .gitignore code video
 git commit -m "feat: add CrashHunter dynamic testing platform"
 git branch -M main
-git remote add origin https://github.com/<你的用户名>/crashhunter.git
+git remote add origin https://github.com/Graylie/crashhunter.git
 git push -u origin main
 ```
-
-GitHub 不需要把密码或个人访问令牌发给我。你只需在本机通过 GitHub Desktop、浏览器或 Git Credential Manager 授权，再执行最后两条命令即可。
