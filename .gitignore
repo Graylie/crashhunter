@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+.venv/
+reports/
+code/reports/
+video/*.mp4
+video/*.webm
