@@ -10,7 +10,7 @@
    cd C:\Users\32825\Documents\ChatGPT\软件安全
    ```
 
-2. 启动 Windows 录屏。使用 Xbox Game Bar 时，按 `Win + Alt + R` 开始录制；屏幕右上角出现计时器后开始操作。
+2. 启动屏幕录制。推荐使用 OBS 的“显示器采集”录制整个屏幕，以便连续展示 PowerShell 和资源管理器。未安装 OBS 时，可打开 Windows 截图工具，切换到“录制”模式，选择整个屏幕后点击“开始”。
 
 3. 在 PowerShell 执行：
 
@@ -31,7 +31,7 @@
    - `bugs/BUG-001/stderr.txt`：程序错误栈；
    - `bugs/BUG-001/metadata.json`：退出状态和复现命令。
 
-6. 返回终端，按 `Win + Alt + R` 停止录制。Xbox Game Bar 默认将视频保存到“视频\捕获”目录。
+6. 停止录制，将视频保存为 `video/crashhunter-demo.mp4`。
 
 ## 建议时长
 
