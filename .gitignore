@@ -3,5 +3,3 @@ __pycache__/
 .venv/
 reports/
 code/reports/
-video/*.mp4
-video/*.webm
