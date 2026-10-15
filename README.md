@@ -2,6 +2,8 @@
 
 本项目使用 Python + Android SDK 实现软件动态测试。输入待测软件所在目录，平台自动执行程序、捕获崩溃并输出测试报告。Android 模式读取目录中的 APK，安装到模拟器或安卓手机，通过 Monkey 自动点击、滑动和切换页面，收集目标应用的 Java 崩溃、Native 崩溃及 ANR。
 
+**主演示：LibreNews 1.4 真实崩溃复现。** [查看完整报告和逐步截图](code/examples/librenews-issue-22/report/README.md) · [查看最新实际录像](video/librenews-issue-22-verified.mp4)。最新复测完成 10 个明确步骤，捕获 1 个数组越界崩溃。计算器视频仅保留为随机压力测试基线。
+
 ## 运行
 
 前置条件：
@@ -40,11 +42,29 @@ python -m code.src.crash_hunter.android --target targets/my-app --sdk E:\Android
 - 生成 Markdown、HTML 和 JSON 报告，以及每个问题的独立证据和复测命令。
 - 可录制首个应用第一轮测试的真实安卓屏幕，最长 180 秒。
 
-平台使用 Android 官方 [Monkey](https://developer.android.com/studio/test/other-testing-tools/monkey) 和 [Logcat](https://developer.android.com/tools/logcat)。参考项目：[Android Teaching Test Platform](https://github.com/jinglingsun/android-testing-platform)。当前实现采用命令行与随机探索，不包含参考项目中的网页配置、DFS/BFS 和性质插件功能。
+平台使用 Android 官方 [Monkey](https://developer.android.com/studio/test/other-testing-tools/monkey) 和 [Logcat](https://developer.android.com/tools/logcat)。参考项目：[Android Teaching Test Platform](https://github.com/jinglingsun/android-testing-platform)。支持随机探索和按明确控件步骤执行 JSON 用例；不包含参考项目的网页配置、DFS/BFS 和性质插件。
 
 安装使用 `adb install -r`；每轮开始前停止目标应用，不清除应用数据。同一 seed 可重新生成事件流，完全复现还需要相同应用数据、版本、设备及执行时序。
 
 ## 真实 App 实测
+
+### 已知缺陷复现：LibreNews 1.4
+
+使用官方历史 APK，按公开的 [Issue #22](https://github.com/milesmcc/LibreNews-Android/issues/22) 关闭自动刷新，将服务器地址改为 `xxyyzz`，再点击刷新。已在当前 API 37.0 模拟器成功捕获 `BUG-001`：`ArrayIndexOutOfBoundsException: length=0; index=0`，错误位置为 `FlashManager.java:184`，与原始问题记录一致。这是公开历史缺陷的复现，不是新发现的漏洞，也没有修改待测 App 制造异常。
+
+下载方法见 [targets/librenews/README.md](targets/librenews/README.md)。运行明确步骤用例：
+
+```powershell
+python -m code.src.crash_hunter.android --target targets/librenews --sdk E:\AndroidStudio\Sdk --device emulator-5554 --scenario code/scenarios/librenews-issue-22.json --rounds 1 --reset-app-data --video video/librenews-issue-22-verified.mp4
+```
+
+平台根据每一步的新 UI XML 定位控件，按 `resource-id` 或文本交互，保存每步操作、原始 UI 树和截图；定位失败会停止用例并报告执行失败，不会随意点击其他位置。用例需要应用界面使用英文，首次运行若有系统兼容性提示，需先关闭该提示。
+
+复现说明和真实错误栈见 [code/examples/librenews-issue-22/README.md](code/examples/librenews-issue-22/README.md)。
+
+完整报告、逐步截图和实际错误栈已整理在 [GitHub 可读报告](code/examples/librenews-issue-22/report/README.md)。这个缺陷需要本次进程中的服务器地址发生变化；`--reset-app-data` 在每轮前清除目标 App 数据，以恢复默认配置。仅在专用测试设备上使用该参数。
+
+### 随机测试基线：Fossify Calculator
 
 测试对象为官方发布的 [Fossify Calculator 1.4.0](https://github.com/FossifyOrg/Calculator/releases/tag/1.4.0)，没有为本项目设置缺陷。下载方法见 [targets/fossify-calculator/README.md](targets/fossify-calculator/README.md)。
 
@@ -70,6 +90,8 @@ python -m code.src.crash_hunter.android --target targets/fossify-calculator --sd
 | `--timeout` | 单轮 Monkey 超时秒数，默认 300 |
 | `--output` | 报告根目录，默认 `reports` |
 | `--video` | 首轮实际屏幕录像保存位置，可选 |
+| `--scenario` | JSON 控件步骤用例，启用后替代 Monkey 随机事件 |
+| `--reset-app-data` | 每轮清除目标 App 数据，默认关闭；用于专用设备的干净状态复测 |
 
 ## 输出
 
@@ -78,6 +100,7 @@ python -m code.src.crash_hunter.android --target targets/fossify-calculator --sd
 - `report.html`、`report.md`：测试结果。
 - `summary.json`：应用信息、各轮实际事件数、状态及问题列表。
 - `app-xx-round-xx/`：`monkey.txt`、`logcat.txt`、测试元数据及开始/结束截图。
+- 控件步骤模式额外保存 `scenario.json`、`actions.json`、`actions.txt` 和各步 UI XML/截图；步骤失败属于用例执行失败，不自动当作应用 bug。
 - `bugs/BUG-xxx/`：发现问题时创建，保存 `evidence.txt`、日志、结束截图、`metadata.json` 和 `replay.txt`。
 
 截图是该轮结束时的界面，不保证是崩溃瞬间。`replay.txt` 用于同一种子复测，在不同应用状态下不保证必然复现。
@@ -85,6 +108,8 @@ python -m code.src.crash_hunter.android --target targets/fossify-calculator --sd
 ## 代码结构
 
 - `code/src/crash_hunter/android.py`：Android 设备适配、APK 解析、自动测试、崩溃筛选及报告。
+- `code/src/crash_hunter/ui_scenario.py`：根据最新控件树执行明确步骤并保存过程证据。
+- `code/scenarios/`：可编辑的 JSON 测试用例。
 - `code/src/crash_hunter/cli.py`：命令行程序测试入口。
 - `code/src/crash_hunter/runner.py`、`fuzz.py`、`reporter.py`：命令行执行、输入变异和报告。
 - `code/scripts/`：模拟器启动脚本。
@@ -115,3 +140,7 @@ python -m unittest discover -s code/tests -v
 ```
 
 测试覆盖目标包及子进程崩溃归属、Native 崩溃、ANR、无关进程排除及命令行崩溃证据保存。
+
+## 许可证
+
+平台代码按 [MIT License](LICENSE) 开源。第三方待测应用的代码、名称及 APK 仍遵循其原项目许可，APK 不纳入本仓库。

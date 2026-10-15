@@ -1,0 +1,284 @@
+[
+  {
+    "step": 1,
+    "label": "Dismiss the old-Android compatibility notice if present",
+    "action": "tap",
+    "status": "completed",
+    "selector": {
+      "resource-id": "android:id/button1",
+      "text": "OK"
+    },
+    "observed": {
+      "index": "1",
+      "text": "OK",
+      "resource-id": "android:id/button1",
+      "class": "android.widget.Button",
+      "package": "android",
+      "content-desc": "",
+      "checkable": "false",
+      "checked": "false",
+      "clickable": "true",
+      "enabled": "true",
+      "focusable": "true",
+      "focused": "false",
+      "scrollable": "false",
+      "long-clickable": "false",
+      "password": "false",
+      "selected": "false",
+      "bounds": "[810,1325][978,1467]",
+      "drawing-order": "4",
+      "hint": ""
+    }
+  },
+  {
+    "step": 2,
+    "label": "Dismiss the welcome page if present",
+    "action": "tap",
+    "status": "completed",
+    "selector": {
+      "resource-id": "app.librenews.io.librenews:id/startLibreNews"
+    },
+    "observed": {
+      "index": "5",
+      "text": "GO TO LIBRENEWS",
+      "resource-id": "app.librenews.io.librenews:id/startLibreNews",
+      "class": "android.widget.Button",
+      "package": "app.librenews.io.librenews",
+      "content-desc": "",
+      "checkable": "false",
+      "checked": "false",
+      "clickable": "true",
+      "enabled": "true",
+      "focusable": "true",
+      "focused": "false",
+      "scrollable": "false",
+      "long-clickable": "false",
+      "password": "false",
+      "selected": "false",
+      "bounds": "[312,2190][769,2316]",
+      "drawing-order": "6",
+      "hint": ""
+    }
+  },
+  {
+    "step": 3,
+    "label": "Disable automatic refresh",
+    "action": "set_checked",
+    "status": "completed",
+    "selector": {
+      "text": "Automatically refresh"
+    },
+    "observed": {
+      "index": "0",
+      "text": "Automatically refresh",
+      "resource-id": "android:id/title",
+      "class": "android.widget.TextView",
+      "package": "app.librenews.io.librenews",
+      "content-desc": "",
+      "checkable": "false",
+      "checked": "false",
+      "clickable": "false",
+      "enabled": "true",
+      "focusable": "false",
+      "focused": "false",
+      "scrollable": "false",
+      "long-clickable": "false",
+      "password": "false",
+      "selected": "false",
+      "bounds": "[42,733][440,790]",
+      "drawing-order": "1",
+      "hint": ""
+    },
+    "previous_checked": true
+  },
+  {
+    "step": 4,
+    "label": "Open the server address editor",
+    "action": "tap",
+    "status": "completed",
+    "selector": {
+      "text": "Server",
+      "resource-id": "android:id/title"
+    },
+    "observed": {
+      "index": "0",
+      "text": "Server",
+      "resource-id": "android:id/title",
+      "class": "android.widget.TextView",
+      "package": "app.librenews.io.librenews",
+      "content-desc": "",
+      "checkable": "false",
+      "checked": "false",
+      "clickable": "false",
+      "enabled": "true",
+      "focusable": "false",
+      "focused": "false",
+      "scrollable": "false",
+      "long-clickable": "false",
+      "password": "false",
+      "selected": "false",
+      "bounds": "[42,495][160,552]",
+      "drawing-order": "1",
+      "hint": ""
+    }
+  },
+  {
+    "step": 5,
+    "label": "Replace the server address with xxyyzz",
+    "action": "set_text",
+    "status": "completed",
+    "selector": {
+      "resource-id": "android:id/edit"
+    },
+    "observed": {
+      "index": "0",
+      "text": "https://librenews.io/api",
+      "resource-id": "android:id/edit",
+      "class": "android.widget.EditText",
+      "package": "app.librenews.io.librenews",
+      "content-desc": "",
+      "checkable": "false",
+      "checked": "false",
+      "clickable": "true",
+      "enabled": "true",
+      "focusable": "true",
+      "focused": "true",
+      "scrollable": "false",
+      "long-clickable": "true",
+      "password": "false",
+      "selected": "false",
+      "bounds": "[123,1118][957,1236]",
+      "drawing-order": "2",
+      "hint": ""
+    },
+    "value": "xxyyzz"
+  },
+  {
+    "step": 6,
+    "label": "Verify the entered server address is exactly xxyyzz",
+    "action": "assert_exists",
+    "status": "completed",
+    "selector": {
+      "resource-id": "android:id/edit",
+      "text": "xxyyzz"
+    },
+    "observed": {
+      "index": "0",
+      "text": "xxyyzz",
+      "resource-id": "android:id/edit",
+      "class": "android.widget.EditText",
+      "package": "app.librenews.io.librenews",
+      "content-desc": "",
+      "checkable": "false",
+      "checked": "false",
+      "clickable": "true",
+      "enabled": "true",
+      "focusable": "true",
+      "focused": "true",
+      "scrollable": "false",
+      "long-clickable": "true",
+      "password": "false",
+      "selected": "false",
+      "bounds": "[123,1118][957,1236]",
+      "drawing-order": "2",
+      "hint": ""
+    }
+  },
+  {
+    "step": 7,
+    "label": "Save the invalid address",
+    "action": "tap",
+    "status": "completed",
+    "selector": {
+      "resource-id": "android:id/button1",
+      "text": "OK"
+    },
+    "observed": {
+      "index": "1",
+      "text": "OK",
+      "resource-id": "android:id/button1",
+      "class": "android.widget.Button",
+      "package": "app.librenews.io.librenews",
+      "content-desc": "",
+      "checkable": "false",
+      "checked": "false",
+      "clickable": "true",
+      "enabled": "true",
+      "focusable": "true",
+      "focused": "false",
+      "scrollable": "false",
+      "long-clickable": "false",
+      "password": "false",
+      "selected": "false",
+      "bounds": "[810,1300][978,1442]",
+      "drawing-order": "4",
+      "hint": ""
+    }
+  },
+  {
+    "step": 8,
+    "label": "Check that the server status is visible before refreshing",
+    "action": "assert_exists",
+    "status": "completed",
+    "selector": {
+      "resource-id": "app.librenews.io.librenews:id/status_text"
+    },
+    "observed": {
+      "index": "2",
+      "text": "server must be HTTPS",
+      "resource-id": "app.librenews.io.librenews:id/status_text",
+      "class": "android.widget.TextView",
+      "package": "app.librenews.io.librenews",
+      "content-desc": "",
+      "checkable": "false",
+      "checked": "false",
+      "clickable": "false",
+      "enabled": "true",
+      "focusable": "false",
+      "focused": "false",
+      "scrollable": "false",
+      "long-clickable": "false",
+      "password": "false",
+      "selected": "false",
+      "bounds": "[97,248][567,311]",
+      "drawing-order": "5",
+      "hint": ""
+    }
+  },
+  {
+    "step": 9,
+    "label": "Refresh with an empty news list and invalid server",
+    "action": "tap",
+    "status": "completed",
+    "selector": {
+      "resource-id": "app.librenews.io.librenews:id/refresh_button"
+    },
+    "observed": {
+      "index": "4",
+      "text": "REFRESH",
+      "resource-id": "app.librenews.io.librenews:id/refresh_button",
+      "class": "android.widget.Button",
+      "package": "app.librenews.io.librenews",
+      "content-desc": "",
+      "checkable": "false",
+      "checked": "false",
+      "clickable": "true",
+      "enabled": "true",
+      "focusable": "true",
+      "focused": "false",
+      "scrollable": "false",
+      "long-clickable": "false",
+      "password": "false",
+      "selected": "false",
+      "bounds": "[828,221][1059,347]",
+      "drawing-order": "2",
+      "hint": ""
+    }
+  },
+  {
+    "step": 10,
+    "label": "Observe crash logs after refresh",
+    "action": "wait",
+    "status": "completed"
+  }
+]

@@ -1,0 +1,35 @@
+{
+  "report_id": "android-20261015T063333772654Z",
+  "status": "completed",
+  "device": "emulator-5554",
+  "apps": [
+    {
+      "package": "app.librenews.io.librenews",
+      "version": "1.4",
+      "sha256": "80110343f0cbfa7fd8a99514425bf375a4dd2c36ae6b8f8c4ddf3d0ad8523d6a"
+    }
+  ],
+  "runs": [
+    {
+      "package": "app.librenews.io.librenews",
+      "mode": "scenario",
+      "status": "completed",
+      "requested_events": 10,
+      "injected_events": 10,
+      "reset_app_data": true
+    }
+  ],
+  "bugs": [
+    {
+      "id": "BUG-001",
+      "package": "app.librenews.io.librenews",
+      "kind": "JAVA_CRASH",
+      "signature": "java.lang.ArrayIndexOutOfBoundsException: length=0; index=0\n\tat app.librenews.io.librenews.controllers.FlashManager.convertFlashesToOutputString(FlashManager.java:184)\n\tat app.librenews.io.librenews.controllers.FlashManager.writeFlashesToStorage(FlashManager.java:152)\n\tat app.librenews.io.librenews.controllers.FlashManager.clearPushedFlashes(FlashManager.java:200)\n\tat app.librenews.io.librenews.controllers.FlashManager.refresh(FlashManager.java:256)\n\tat app.librenews.io.librenews.views.MainFlashActivity$1.onClick(MainFlashActivity.java:67)\n\tat android.view.View.performClick(View.java:8241)\n\tat android.view.View.performClickInternal(View.java:8218)\n\tat android.view.View.-$$Nest$mperformClickInternal(View.java:0)\n\tat android.view.View$PerformClick.run(View.java:32182)\n\tat android.os.Handler.handleCallback(Handler.java:1095)\n\tat android.os.Handler.dispatchMessageImpl(Handler.java:135)",
+      "evidence": "FATAL EXCEPTION: main\nProcess: app.librenews.io.librenews, PID: 6886\njava.lang.ArrayIndexOutOfBoundsException: length=0; index=0\n\tat app.librenews.io.librenews.controllers.FlashManager.convertFlashesToOutputString(FlashManager.java:184)\n\tat app.librenews.io.librenews.controllers.FlashManager.writeFlashesToStorage(FlashManager.java:152)\n\tat app.librenews.io.librenews.controllers.FlashManager.clearPushedFlashes(FlashManager.java:200)\n\tat app.librenews.io.librenews.controllers.FlashManager.refresh(FlashManager.java:256)\n\tat app.librenews.io.librenews.views.MainFlashActivity$1.onClick(MainFlashActivity.java:67)\n\tat android.view.View.performClick(View.java:8241)\n\tat android.view.View.performClickInternal(View.java:8218)\n\tat android.view.View.-$$Nest$mperformClickInternal(View.java:0)\n\tat android.view.View$PerformClick.run(View.java:32182)\n\tat android.os.Handler.handleCallback(Handler.java:1095)\n\tat android.os.Handler.dispatchMessageImpl(Handler.java:135)\n\tat android.os.Handler.dispatchMessage(Handler.java:125)\n\tat android.os.Looper.loopOnce(Looper.java:296)\n\tat android.os.Looper.loop(Looper.java:397)\n\tat android.app.ActivityThread.main(ActivityThread.java:9523)\n\tat java.lang.reflect.Method.invoke(Native Method)\n\tat com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:575)\n\tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:939)",
+      "occurrences": [
+        "app-01-round-01"
+      ]
+    }
+  ],
+  "errors": []
+}

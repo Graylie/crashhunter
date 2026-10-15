@@ -1,0 +1,18 @@
+{
+  "name": "LibreNews 1.4 invalid-server refresh crash",
+  "package": "app.librenews.io.librenews",
+  "source": "https://github.com/milesmcc/LibreNews-Android/issues/22",
+  "purpose": "Reproduce a published historical bug; this is not a newly discovered vulnerability.",
+  "steps": [
+    {"action": "tap", "label": "Dismiss the old-Android compatibility notice if present", "guard": {"resource-id": "android:id/message", "text": "This app was built for an older version of Android. It might not work properly and doesn't include the latest security and privacy protections. Check for an update, or contact the app's developer."}, "selector": {"resource-id": "android:id/button1", "text": "OK"}, "optional": true},
+    {"action": "tap", "label": "Dismiss the welcome page if present", "selector": {"resource-id": "app.librenews.io.librenews:id/startLibreNews"}, "optional": true},
+    {"action": "set_checked", "label": "Disable automatic refresh", "selector": {"text": "Automatically refresh"}, "checked": false},
+    {"action": "tap", "label": "Open the server address editor", "selector": {"text": "Server", "resource-id": "android:id/title"}},
+    {"action": "set_text", "label": "Replace the server address with xxyyzz", "selector": {"resource-id": "android:id/edit"}, "value": "xxyyzz"},
+    {"action": "assert_exists", "label": "Verify the entered server address is exactly xxyyzz", "selector": {"resource-id": "android:id/edit", "text": "xxyyzz"}},
+    {"action": "tap", "label": "Save the invalid address", "selector": {"resource-id": "android:id/button1", "text": "OK"}},
+    {"action": "assert_exists", "label": "Check that the server status is visible before refreshing", "selector": {"resource-id": "app.librenews.io.librenews:id/status_text"}},
+    {"action": "tap", "label": "Refresh with an empty news list and invalid server", "selector": {"resource-id": "app.librenews.io.librenews:id/refresh_button"}},
+    {"action": "wait", "label": "Observe crash logs after refresh", "seconds": 5}
+  ]
+}

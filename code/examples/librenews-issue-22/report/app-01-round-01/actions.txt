@@ -1,0 +1,10 @@
+1. [completed] Dismiss the old-Android compatibility notice if present
+2. [completed] Dismiss the welcome page if present
+3. [completed] Disable automatic refresh
+4. [completed] Open the server address editor
+5. [completed] Replace the server address with xxyyzz
+6. [completed] Verify the entered server address is exactly xxyyzz
+7. [completed] Save the invalid address
+8. [completed] Check that the server status is visible before refreshing
+9. [completed] Refresh with an empty news list and invalid server
+10. [completed] Observe crash logs after refresh

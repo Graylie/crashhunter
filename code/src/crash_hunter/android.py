@@ -9,9 +9,12 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+
+from .ui_scenario import execute_scenario
 
 
 def attributed_incidents(logcat: str, monkey: str, package: str) -> list[dict]:
@@ -120,12 +123,12 @@ def finish(report: Path, summary: dict) -> None:
     write_json(report / "summary.json", summary)
     lines = ["# Android 动态测试报告", "", f"状态：{summary['status']}",
              f"设备：`{summary['device']}`", f"唯一问题数：{len(summary['bugs'])}", "",
-             "随机测试未发现崩溃，不代表软件不存在其他缺陷。安装失败、测试超时和工具错误单独记录，不计作应用 bug。", "",
+             "未发现崩溃不代表软件不存在其他缺陷。安装失败、测试超时和工具错误单独记录，不计作应用 bug。", "",
              "## 应用与测试轮次", ""]
     for app in summary["apps"]:
         lines += [f"### {app['package']} ({app['version']})", "", f"APK SHA-256：`{app['sha256']}`", ""]
     for run in summary["runs"]:
-        lines += [f"- {run['package']}：seed={run['seed']}，请求事件={run['requested_events']}，"
+        lines += [f"- {run['package']}：mode={run.get('mode', 'monkey')}，seed={run['seed']}，请求操作={run['requested_events']}，"
                   f"实际注入={run['injected_events']}，状态={run['status']}，日志=`{run['directory']}`"]
     lines += ["", "## 问题", ""]
     for bug in summary["bugs"]:
@@ -142,6 +145,18 @@ def finish(report: Path, summary: dict) -> None:
         image = f"{run['directory']}/after.png"
         if (report / image).exists():
             body += f"<h2>{html.escape(run['package'])} seed={run['seed']}</h2><img src='{image}'><p><a href='{run['directory']}/monkey.txt'>操作日志</a> · <a href='{run['directory']}/logcat.txt'>Android 日志</a></p>"
+        actions = report / run["directory"] / "actions.json"
+        if actions.exists():
+            body += "<h3>明确操作步骤</h3><ol>"
+            for action in json.loads(actions.read_text(encoding="utf-8")):
+                frame = f"{run['directory']}/step-{action['step']:02d}-after.png"
+                body += f"<li>{html.escape(action['label'])}：{html.escape(action['status'])}"
+                if (report / frame).exists():
+                    body += f" <a href='{frame}'>查看此步截图</a>"
+                body += "</li>"
+            body += "</ol>"
+    for bug in summary["bugs"]:
+        body += f"<h2>{bug['id']} — {html.escape(bug['kind'])}</h2><pre>{html.escape(bug['signature'])}</pre><p><a href='bugs/{bug['id']}/evidence.txt'>实际错误栈</a> · <a href='bugs/{bug['id']}/replay.txt'>复测命令</a></p>"
     (report / "report.html").write_text(body, encoding="utf-8")
 
 
@@ -157,7 +172,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout", type=float, default=300)
     parser.add_argument("--output", type=Path, default=Path("reports"))
     parser.add_argument("--video", type=Path, help="Record the first test round to this MP4 (up to 180 seconds)")
+    parser.add_argument("--scenario", type=Path, help="JSON file with explicit UI test steps instead of Monkey")
+    parser.add_argument("--reset-app-data", action="store_true", help="Clear only each target app's data before every round")
     args = parser.parse_args(argv)
+    scenario = None
+    if args.scenario:
+        try:
+            scenario = json.loads(args.scenario.read_text(encoding="utf-8"))
+            if not isinstance(scenario.get("steps"), list) or not scenario["steps"]:
+                parser.error("Scenario must contain a non-empty steps list")
+        except (OSError, ValueError) as error:
+            parser.error(str(error))
     if min(args.events, args.rounds) < 1 or args.throttle < 0 or args.timeout <= 0:
         parser.error("events/rounds/timeout must be positive; throttle must be nonnegative")
     apks = sorted(args.target.resolve().rglob("*.apk")) if args.target.is_dir() else []
@@ -184,6 +209,8 @@ def main(argv: list[str] | None = None) -> int:
             app = apk_info(aapt, apk)
             summary["apps"].append(app)
             package = app["package"]
+            if scenario and scenario.get("package") != package:
+                raise RuntimeError(f"Scenario package does not match APK: {package}")
             print(f"[INSTALL] {package} version={app['version']}", flush=True)
             install = device.run("install", "-r", str(apk), timeout=180)
             if "Success" not in install:
@@ -199,13 +226,23 @@ def main(argv: list[str] | None = None) -> int:
                 run_dir = report / f"app-{app_index + 1:02d}-round-{round_index + 1:02d}"
                 run_dir.mkdir()
                 device.run("shell", "am", "force-stop", package)
+                if args.reset_app_data:
+                    cleared = device.run("shell", "pm", "clear", package)
+                    if "Success" not in cleared:
+                        raise RuntimeError(f"Could not reset target application: {cleared}")
                 if device.run("shell", "pidof", "com.android.commands.monkey", check=False).strip():
                     raise RuntimeError("Another Monkey is already running")
                 command = device.command("shell", "monkey", "-p", package, "-s", str(seed),
                                          "--throttle", str(args.throttle), "--ignore-crashes", "--ignore-timeouts",
                                          "--ignore-security-exceptions", "--monitor-native-crashes",
                                          "--pct-syskeys", "0", "-v", "-v", str(args.events))
-                run = {"package": package, "seed": seed, "requested_events": args.events,
+                if scenario:
+                    command = [sys.executable, "-m", "code.src.crash_hunter.android", "--target", str(args.target.resolve()),
+                               "--sdk", str(adb.parent.parent), "--device", serial, "--rounds", "1", "--scenario", str(run_dir / "scenario.json")]
+                    if args.reset_app_data:
+                        command.append("--reset-app-data")
+                run = {"package": package, "seed": seed, "mode": "scenario" if scenario else "monkey",
+                       "requested_events": len(scenario["steps"]) if scenario else args.events, "reset_app_data": args.reset_app_data,
                        "injected_events": 0, "directory": run_dir.name, "status": "running",
                        "command": command}
                 summary["runs"].append(run)
@@ -227,14 +264,21 @@ def main(argv: list[str] | None = None) -> int:
                         recorder = subprocess.Popen(device.command("shell", "screenrecord", "--size", "540x1200", "--bit-rate", "2000000", "--time-limit", "180", remote_video), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         time.sleep(1)
                         remote_pid = device.run("shell", "pidof", "screenrecord", check=False).strip()
-                    print(f"[RUN] {package} round={round_index + 1} seed={seed} events={args.events}", flush=True)
-                    result = subprocess.run(command, capture_output=True, timeout=args.timeout)
-                    monkey = (result.stdout + result.stderr).decode("utf-8", errors="replace")
-                    (run_dir / "monkey.txt").write_text(monkey, encoding="utf-8")
-                    count = re.search(r"Events injected:\s*(\d+)", monkey)
-                    run["injected_events"] = int(count.group(1)) if count else 0
-                    run["exit_code"] = result.returncode
-                    run["status"] = "completed" if count and run["injected_events"] == args.events and result.returncode == 0 else "incomplete"
+                    print(f"[RUN] {package} round={round_index + 1} mode={run['mode']} operations={run['requested_events']}", flush=True)
+                    if scenario:
+                        records = execute_scenario(device, scenario, run_dir)
+                        run["injected_events"] = sum(r["status"] == "completed" for r in records)
+                        run["skipped_steps"] = sum(r["status"] == "skipped" for r in records)
+                        run["status"] = "completed"
+                        (run_dir / "monkey.txt").write_text("Scenario mode: see actions.json and actions.txt.\n", encoding="utf-8")
+                    else:
+                        result = subprocess.run(command, capture_output=True, timeout=args.timeout)
+                        monkey = (result.stdout + result.stderr).decode("utf-8", errors="replace")
+                        (run_dir / "monkey.txt").write_text(monkey, encoding="utf-8")
+                        count = re.search(r"Events injected:\s*(\d+)", monkey)
+                        run["injected_events"] = int(count.group(1)) if count else 0
+                        run["exit_code"] = result.returncode
+                        run["status"] = "completed" if count and run["injected_events"] == args.events and result.returncode == 0 else "incomplete"
                     time.sleep(1)
                     device.screenshot(run_dir / "after.png")
                 except subprocess.TimeoutExpired as error:
@@ -249,6 +293,10 @@ def main(argv: list[str] | None = None) -> int:
                     run["status"] = "failed"
                     summary["errors"].append(f"{package} seed={seed}: {error}")
                 finally:
+                    if scenario and (run_dir / "actions.json").exists():
+                        action_records = json.loads((run_dir / "actions.json").read_text(encoding="utf-8"))
+                        run["injected_events"] = sum(r["status"] == "completed" for r in action_records)
+                        run["skipped_steps"] = sum(r["status"] == "skipped" for r in action_records)
                     if recorder:
                         if remote_pid.isdecimal():
                             device.run("shell", "kill", "-2", remote_pid, check=False)
@@ -286,10 +334,11 @@ def main(argv: list[str] | None = None) -> int:
                     bug_dir = report / "bugs" / bug_id
                     bug_dir.mkdir(parents=True)
                     (bug_dir / "evidence.txt").write_text(incident["evidence"], encoding="utf-8")
-                    for name in ("logcat.txt", "monkey.txt", "after.png"):
+                    for name in ("logcat.txt", "monkey.txt", "after.png", "actions.json", "actions.txt", "scenario.json"):
                         if (run_dir / name).exists():
                             shutil.copy2(run_dir / name, bug_dir / name)
-                    (bug_dir / "replay.txt").write_text(subprocess.list2cmdline(command) + "\n同一 seed 可重新生成事件流，复现也依赖相同应用状态、版本、设备和执行时序。\n", encoding="utf-8")
+                    replay_note = "在项目根目录执行。控件步骤模式按保存的 scenario.json 复测；随机模式使用同一 seed，复现也依赖相同应用状态、版本、设备和执行时序。\n"
+                    (bug_dir / "replay.txt").write_text(subprocess.list2cmdline(command) + "\n" + replay_note, encoding="utf-8")
                     print(f"[BUG] {bug_id} {package} {incident['kind']}", flush=True)
                 write_json(run_dir / "metadata.json", run)
                 print(f"[ROUND DONE] status={run['status']} injected={run['injected_events']}", flush=True)
