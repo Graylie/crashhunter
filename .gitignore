@@ -3,3 +3,4 @@ __pycache__/
 .venv/
 reports/
 code/reports/
+targets/**/*.apk

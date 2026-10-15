@@ -1,94 +1,117 @@
-# CrashHunter 动态软件测试平台
+# CrashHunter 软件动态测试平台
 
-本项目是一个本地动态软件测试平台原型，使用 Python 标准库实现。平台输入待测软件所在目录，自动执行目标程序并生成测试输入；程序异常退出、被信号终止或超时时，平台会保存触发问题的输入与运行证据，并生成测试报告。
+本项目使用 Python + Android SDK 实现软件动态测试。输入待测软件所在目录，平台自动执行程序、捕获崩溃并输出测试报告。Android 模式读取目录中的 APK，安装到模拟器或安卓手机，通过 Monkey 自动点击、滑动和切换页面，收集目标应用的 Java 崩溃、Native 崩溃及 ANR。
 
 ## 运行
 
 前置条件：
 
-- Windows、macOS 或 Linux；
-- Python 3.10 或更高版本；
-- 无第三方依赖。
+- Python 3.10+，不需要第三方 Python 库。
+- Android SDK Platform-Tools、Build-Tools，及已经启动的模拟器或已连接的安卓手机。
+- `adb devices` 中设备状态为 `device`。
 
-在项目根目录执行演示测试：
-
-```powershell
-python -m code.src.crash_hunter --target code/demo_target --iterations 40 --seed 2026
-```
-
-平台会自动识别 `code/demo_target/main.py`，并在 `reports/<时间戳>/` 创建测试报告。演示目标程序包含两个已知缺陷，运行后终端将输出两个唯一 bug，分别对应 `CRASH` 和 `OVERFLOW` 输入。
-
-运行单元测试：
+本机 SDK 位于 `E:\AndroidStudio\Sdk`。在项目根目录启动模拟器：
 
 ```powershell
-python -m unittest discover -s code/tests -v
+powershell -NoProfile -ExecutionPolicy Bypass -File .\code\scripts\start-emulator.ps1
 ```
 
-### 测试其他软件
+检查设备：
 
-待测目录中包含 `main.py`、`app.py`、`target.py`，或仅有一个 Python 文件/可执行文件时，可直接执行：
+```powershell
+& 'E:\AndroidStudio\Sdk\platform-tools\adb.exe' devices -l
+```
+
+将待测 APK 放进一个目录，例如 `targets/my-app/`，运行：
+
+```powershell
+python -m code.src.crash_hunter.android --target targets/my-app --sdk E:\AndroidStudio\Sdk --device emulator-5554 --events 300 --rounds 3 --seed 2026
+```
+
+`--target` 是待测软件目录，目录中的每个独立 APK 都会被测试。平台不支持 split APK/APKS 安装包。设备只有一台时可以省略 `--device`。
+
+## Android 模式能力
+
+- 扫描 APK 目录，解析包名、版本及 SHA-256，自动安装并启动应用。
+- 根据随机种子发送点击、滑动、按键和页面切换事件，限定在目标包内运行。
+- 连续收集 Android 日志，仅将明确属于目标包及其子进程的崩溃计入报告。
+- 捕获 Java 异常、Native 崩溃和 Monkey 报告的 ANR，去重并保存证据。
+- 每轮保存操作日志、Android 日志、开始/结束截图、启动记录和测试参数。
+- 生成 Markdown、HTML 和 JSON 报告，以及每个问题的独立证据和复测命令。
+- 可录制首个应用第一轮测试的真实安卓屏幕，最长 180 秒。
+
+平台使用 Android 官方 [Monkey](https://developer.android.com/studio/test/other-testing-tools/monkey) 和 [Logcat](https://developer.android.com/tools/logcat)。参考项目：[Android Teaching Test Platform](https://github.com/jinglingsun/android-testing-platform)。当前实现采用命令行与随机探索，不包含参考项目中的网页配置、DFS/BFS 和性质插件功能。
+
+安装使用 `adb install -r`；每轮开始前停止目标应用，不清除应用数据。同一 seed 可重新生成事件流，完全复现还需要相同应用数据、版本、设备及执行时序。
+
+## 真实 App 实测
+
+测试对象为官方发布的 [Fossify Calculator 1.4.0](https://github.com/FossifyOrg/Calculator/releases/tag/1.4.0)，没有为本项目设置缺陷。下载方法见 [targets/fossify-calculator/README.md](targets/fossify-calculator/README.md)。
+
+```powershell
+python -m code.src.crash_hunter.android --target targets/fossify-calculator --sdk E:\AndroidStudio\Sdk --device emulator-5554 --events 300 --rounds 3 --seed 2026 --throttle 150 --video video/android-calculator-demo.mp4
+```
+
+2026-10-15 实测：种子 2026、2027、2028，每轮实际注入 300 个事件，三轮全部完成，未捕获目标应用的崩溃或 ANR。结果见 [实测摘要](code/examples/calculator-test-result.md)，实际录像见 [video/](video/README.md)。
+
+**未发现问题不代表应用没有 bug。** 当前检测崩溃和无响应，不能自动判定计算结果错误等所有逻辑缺陷。安装失败、设备离线和工具超时单独报告，不计作应用 bug。
+
+## 参数
+
+| 参数 | 说明 |
+| --- | --- |
+| `--target` | 独立 APK 所在目录，必填 |
+| `--sdk` | SDK 根目录，也支持环境变量或 PATH 自动发现 |
+| `--device` | ADB 设备号，多台设备时必填 |
+| `--events` | 每轮操作数，默认 300 |
+| `--rounds` | 每个 APK 测试轮数，默认 3 |
+| `--seed` | 首轮随机种子，后续每轮加 1 |
+| `--throttle` | 操作间隔毫秒，默认 100 |
+| `--timeout` | 单轮 Monkey 超时秒数，默认 300 |
+| `--output` | 报告根目录，默认 `reports` |
+| `--video` | 首轮实际屏幕录像保存位置，可选 |
+
+## 输出
+
+每次生成 `reports/android-<时间戳>/`：
+
+- `report.html`、`report.md`：测试结果。
+- `summary.json`：应用信息、各轮实际事件数、状态及问题列表。
+- `app-xx-round-xx/`：`monkey.txt`、`logcat.txt`、测试元数据及开始/结束截图。
+- `bugs/BUG-xxx/`：发现问题时创建，保存 `evidence.txt`、日志、结束截图、`metadata.json` 和 `replay.txt`。
+
+截图是该轮结束时的界面，不保证是崩溃瞬间。`replay.txt` 用于同一种子复测，在不同应用状态下不保证必然复现。
+
+## 代码结构
+
+- `code/src/crash_hunter/android.py`：Android 设备适配、APK 解析、自动测试、崩溃筛选及报告。
+- `code/src/crash_hunter/cli.py`：命令行程序测试入口。
+- `code/src/crash_hunter/runner.py`、`fuzz.py`、`reporter.py`：命令行执行、输入变异和报告。
+- `code/scripts/`：模拟器启动脚本。
+- `code/tests/`：自动化测试。
+- `code/examples/`：真实 App 实测摘要。
+- `video/`：实际运行录像及说明。
+
+## 测试命令行程序
+
+原有模式仍可测试通过文件或标准输入读取数据的 Python 程序和可执行文件：
 
 ```powershell
 python -m code.src.crash_hunter --target D:\path\to\program --iterations 200
 ```
 
-不能自动识别启动文件时，可显式指定启动命令。`{input}` 表示当前测试用例文件的绝对路径：
+指定启动入口：
 
 ```powershell
-python -m code.src.crash_hunter --target D:\path\to\program `
-  --command "python app.py --file {input}" --input-mode argv --iterations 500
+python -m code.src.crash_hunter --target D:\path\to\program --command "python app.py --file {input}" --input-mode argv --iterations 200
 ```
 
-对于从标准输入读取数据的程序：
+`code/demo_target/` 仅用于命令行模式自检，包含已知缺陷；Android 实测使用真实开源 App。
+
+## 验证平台
 
 ```powershell
-python -m code.src.crash_hunter --target D:\path\to\program `
-  --command "python app.py" --input-mode stdin --iterations 500
+python -m unittest discover -s code/tests -v
 ```
 
-常用参数：
-
-| 参数 | 说明 |
-| --- | --- |
-| `--iterations N` | 执行 N 个测试用例，默认 100 |
-| `--timeout 秒` | 单个用例的最长运行时间，默认 3 秒 |
-| `--seed N` | 固定随机种子，便于重复实验 |
-| `--output 目录` | 报告输出目录，默认 `reports` |
-| `--input-mode argv\|stdin` | 以文件路径参数或标准输入传递测试数据 |
-
-## 第一版能力
-
-- 以待测软件目录作为输入，自动发现常见 Python 程序或可执行文件；
-- 支持通过 `--command` 配置任意启动命令；
-- 内置边界值与高风险种子，包括空输入、长输入、路径片段与格式化字符串；
-- 基于确定性随机变异生成后续测试输入；
-- 捕获非零退出码、Unix 信号终止和超时；
-- 使用“退出类型 + 退出码 + 归一化错误摘要”对重复崩溃去重；
-- 为每个 bug 保存触发输入、标准输出、错误输出、元数据与复现命令；
-- 同时生成 Markdown 报告和 JSON 汇总报告。
-
-## 报告说明
-
-每次运行生成 `reports/<时间戳>/`：
-
-- `summary.json`：测试用例数、唯一 bug 数与 bug 元数据；
-- `report.md`：可直接阅读的测试报告；
-- `bugs/BUG-xxx/input.bin`：触发问题的原始输入；
-- `bugs/BUG-xxx/stdout.txt`、`stderr.txt`：程序运行输出；
-- `bugs/BUG-xxx/metadata.json`：退出状态、崩溃签名和复现命令。
-
-## 代码结构
-
-- `code/src/crash_hunter/cli.py`：命令行入口和测试主循环；
-- `code/src/crash_hunter/discovery.py`：待测程序自动发现；
-- `code/src/crash_hunter/fuzz.py`：种子语料与变异输入生成；
-- `code/src/crash_hunter/runner.py`：子进程执行、超时处理和崩溃签名；
-- `code/src/crash_hunter/reporter.py`：证据保存与报告生成；
-- `code/src/crash_hunter/model.py`：运行结果与 bug 数据模型；
-- `code/demo_target/main.py`：用于演示的待测程序；
-- `code/tests/test_platform.py`：平台单元测试；
-- `video/README.md`：运行演示说明。
-
-## 运行演示
-
-演示步骤与视频要求见 [video/README.md](video/README.md)。
+测试覆盖目标包及子进程崩溃归属、Native 崩溃、ANR、无关进程排除及命令行崩溃证据保存。
