@@ -141,6 +141,10 @@ python -m unittest discover -s code/tests -v
 
 测试覆盖目标包及子进程崩溃归属、Native 崩溃、ANR、无关进程排除及命令行崩溃证据保存。
 
+## 开发对话记录
+
+项目开发对话的简化整理版见 [prompt/CONVERSATION_TRANSCRIPT.md](prompt/CONVERSATION_TRANSCRIPT.md)。
+
 ## 许可证
 
 平台代码按 [MIT License](LICENSE) 开源。第三方待测应用的代码、名称及 APK 仍遵循其原项目许可，APK 不纳入本仓库。
